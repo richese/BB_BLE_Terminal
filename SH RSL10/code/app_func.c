@@ -74,10 +74,13 @@ void App_Init(void)
     app_env.time_out = 300;
 
     app_env.uart_tx_value[0] = 0xEF;
-    memset(app_env.uart_rx_value, 0, 20);
-    memset(app_env.spi1_rx_value, 0, 20);
+    memset(app_env.uart_rx_value, 0, 60);
+    memset(app_env.spi1_rx_value, 0, 60);
     app_env.start_hdl = 0;
     app_env.uart_rx_value_changed = 0;
+    app_env.uart_tx_value_changed = 0;
+    app_env.uart_rx_size = 0;
+    app_env.uart_tx_size = 0;
     app_env.cccd_value = 1;
     app_env.spi1_rx_value_changed = 0;
     app_env.spi1_tx_value_changed = 0;

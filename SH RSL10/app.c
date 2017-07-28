@@ -15,6 +15,7 @@
  * ------------------------------------------------------------------------- */
 
 #include "include/app.h"
+#include "include/spi_interface.h"
 
 /* Global variables for notification simulation */
 static uint16_t cnt_notifc = 0;
@@ -63,7 +64,7 @@ int main()
              * (that is the first characteristic) value has been changed.
              * The value sent indicates to master device that this device
              * is bonded to the master device */
-            if ((app_env.cccd_value & 1) && app_env.uart_rx_value_changed)
+            if ((app_env.cccd_value & 1) && app_env.uart_tx_value_changed)
             {
                 if(app_env.bonded == true)
                 {
@@ -73,56 +74,51 @@ int main()
                 {
                     //app_env.uart_tx_value[3] = APP_NOT_BONDED;
                 }
-                app_env.uart_rx_value_changed = 0;
+
                 /*
                 CustomService_SendNotification(app_env.conidx,
                                                app_env.start_hdl + 2,
                                                &app_env.uart_tx_value[0], 1);
                 */
                 CustomService_SendNotification_BCD(app_env.conidx, app_env.start_hdl + 2,
-                		&app_env.uart_tx_value[0],10);// msg_Len);
+                        &app_env.uart_tx_value[0], app_env.uart_tx_size);
+                app_env.uart_tx_value_changed = 0;
             }
 
-        	if((app_env.spi1_tx_size>0)&&(app_env.spi1_tx_size==app_env.bytes)){
-        		if(app_env.spi1_tx_value_changed==0){
-        		SPI1->TX_DATA=(uint32_t) SPI1R_MSG_DONE;
-        		Sys_GPIO_Set_Low(6);
-        		app_env.spi1_tx_value_changed=1;
-        		app_env.bytes=0;
-        		app_env.spi1_tx_size=0;
-        		uint32_t w2z = 200;
-        		while(w2z>0){
-        			w2z--;
-        			if(app_env.spi1_tx_value_changed==0){
-        				break;
-        			}
-        		}
-        		}
-        	}
-            if(app_env.spi1_tx_size>app_env.bytes){
-            	if(app_env.spi1_tx_value_changed==0){
-            		SPI1->TX_DATA=(uint32_t) app_env.spi1_tx_value[app_env.bytes++];
-            		Sys_GPIO_Set_Low(6);
-            		app_env.spi1_tx_value_changed=1;
+            /*  SPI_IF */
 
-            		uint32_t w2z = 200;
-            		while(w2z>0){
-            			w2z--;
-            			if(app_env.spi1_tx_value_changed==0){
-    					break;
-            			}
-            		}
-    			}
+            // Set new message to be sent to Master.
+            // If received message is available && there is no message being sent.
+            if (app_env.uart_rx_value_changed != 0 && SPI_IF_MessagePending() == 0)
+            {
+                if (app_env.uart_rx_size > 0 && SPI_IF_MessagePending() == 0)
+                {
+                    SPI_IF_SetMessage(app_env.uart_rx_value, app_env.uart_rx_size);
+                    app_env.uart_rx_size = 0;
+                }
+                app_env.uart_rx_value_changed = 0;
             }
 
-        /* Refresh the watchdog timer */
-        Sys_Watchdog_Refresh();
+            // Set new message to be transmitted over BLE.
+            // If there is no message being processed and there is new message available.
+            if (app_env.uart_tx_value_changed == 0 &&
+                SPI_IF_GetMessage(app_env.uart_tx_value, &app_env.uart_tx_size) != 0)
+            {
+                app_env.uart_tx_value_changed = 1;
+            }
 
-        /* Wait for an event before executing the scheduler again */
-        SYS_WAIT_FOR_EVENT;
+            /* SPI_IF END */
+
+            /* Refresh the watchdog timer */
+            Sys_Watchdog_Refresh();
+
+            /* Wait for an event before executing the scheduler again */
+            SYS_WAIT_FOR_EVENT;
         }
     }
 }
+
+
 
 /* ----------------------------------------------------------------------------
  * Function      : void TIMER0_IRQHandler(void)
@@ -142,7 +138,6 @@ void TIMER0_IRQHandler(void)
     if (cnt_notifc == 30)
     {
         cnt_notifc = 0;
-        app_env.uart_rx_value_changed=1;
     }
 
     /* Calculate the battery level as a percentage, scaling the battery
@@ -175,57 +170,5 @@ void TIMER0_IRQHandler(void)
 void SPI0_TX_IRQHandler(void){}
 
 void SPI0_ERROR_IRQHandler (void){}
-
-void SPI1_RX_IRQHandler(void)
-{
-	switch ((uint32_t) SPI1->RX_DATA)
-	{
-		case SPI1R_DUMMY:
-		    Sys_GPIO_Set_High(6);
-			uint32_t w2z = 20000;
-			while(w2z>0){
-				w2z--;
-			}
-			app_env.spi1_tx_value_changed=0;
-		    break;
-		case SPI1R_MSG_SEND:
-			SPI1R_STATE=MSG_SEND_REQ;
-			for(int i=59;i>0;i--)
-			{
-				app_env.spi1_rx_value[i]='0';
-			}
-			msg_Len=0;
-			break;
-		case SPI1R_MSG_DONE:
-			SPI1R_STATE=MSG_NO_REQ;
-			app_env.spi1_rx_value_changed=1;
-			app_env.uart_rx_value_changed=1;
-			memcpy(app_env.uart_tx_value, app_env.spi1_rx_value, 10);
-			break;
-		case SPI1R_INT2BCD:
-			msg_Len=10;
-			SPI1R_STATE=MSG_INT2BCD;
-		break;
-		default:
-			switch(SPI1R_STATE)
-			{
-			case MSG_SEND_REQ:
-				app_env.spi1_rx_value[msg_Len++]=(int8_t) SPI1->RX_DATA;
-				SPI1->TX_DATA=SPI1->RX_DATA;
-				break;
-			case MSG_INT2BCD:
-				msg_Len=10;
-				uint322bcd((uint32_t) SPI1->RX_DATA);
-				app_env.spi1_rx_value_changed=1;
-				app_env.uart_rx_value_changed=1;
-				break;
-			default:
-				break;
-			}
-			break;
-	}
-}
-
-void SPI1_ERROR_IRQHandler(void){}
 
 void TIMER1_IRQHandler (void){}

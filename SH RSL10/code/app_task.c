@@ -650,11 +650,12 @@ int GATTC_WriteReqInd(ke_msg_id_t const msg_id,
     else if (param->handle == (app_env.start_hdl + 5))
     {
         /* RX handle */
-        memcpy(app_env.uart_rx_value, param->value, param->length);
-        memcpy(app_env.spi1_tx_value, 0, 10);
-        app_env.spi1_tx_size=param->length;
-        memcpy(app_env.spi1_tx_value, param->value, param->length);
-        app_env.bytes=0;
+        if (param->length > 0)
+        {
+            memcpy(app_env.uart_rx_value, param->value, param->length);
+            app_env.uart_rx_size = param->length;
+            app_env.uart_rx_value_changed = 1;
+        }
     }
 
     else
@@ -844,7 +845,7 @@ int GAPC_BondReqInd(ke_msg_id_t const msg_id,
             case (GAPC_PAIRING_REQ):
             {
 
-            	if(checkSpaceAvailable()!= LIST_FULL)
+                if(checkSpaceAvailable()!= LIST_FULL)
                 {
                 cfm->request = GAPC_PAIRING_RSP;
                 cfm->accept  = 1;

@@ -96,24 +96,3 @@ void GPIO_4_5_to_Input(void){
 	Sys_DIO_Config(4,DIO_MODE_GPIO_IN_0);
 	Sys_DIO_Config(5,DIO_MODE_GPIO_IN_0);
 }
-
-
-void SPI1_SlaveCfg(void)
-{
-	/*
-	 * clk		- 12
-	 * cs		- 9
-	 * seri		- 10
-	 * sero		- 11
-	 */
-
-	Sys_SPI_DIOConfig(1, SPI1_SELECT_SLAVE,
-			        DIO_LPF_DISABLE | DIO_WEAK_PULL_UP, 12, 9, 10, 11);
-
-    Sys_SPI_Config(1, SPI1_SELECT_SLAVE | SPI1_ENABLE |
-        SPI1_CLK_POLARITY_NORMAL |SPI1_UNDERRUN_INT_ENABLE| SPI1_CONTROLLER_CM3 |
-        SPI1_MODE_SELECT_AUTO | SPI1_PRESCALE_16);
-
-    Sys_SPI_TransferConfig(1, SPI1_IDLE | SPI1_RW_DATA | SPI1_CS_1 |
-            SPI1_WORD_SIZE_32);
-}

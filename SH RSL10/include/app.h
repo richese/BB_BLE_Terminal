@@ -59,7 +59,7 @@ enum appm_svc_list
 
 /* Maximal length of the Device Name value  */
 #define APP_DEVICE_NAME_LENGTH_MAX      25
-#define APP_DFLT_DEVICE_NAME            "BB_BLE_Terminal_IDEr1.1"
+#define APP_DFLT_DEVICE_NAME            "BB_BLE_Terminal"
 
 /* vendor specific advertising type (ON SEMICONDUCTOR Company ID) */
 #define APP_SCNRSP_DATA                 {0x4, 0xff, 0x62, 0x3, 0x3}
@@ -75,13 +75,13 @@ enum appm_svc_list
 #define CS_CHARACTERISTIC_UUID          {0x03,0x28}
 
 /* RX value */
-#define CS_RX_VALUE_UUID                {0x24,0xdc,0x0e,0x6e,0x02,0x40,0xca,0x9e,0xe5,0xa9,0xa3,0x00,0xb5,0xf3,0x93,0xe0}
+#define CS_RX_VALUE_UUID                {0x24,0xdc,0x0e,0x6e,0x02,0x40,0xca,0x9e,0xe5,0xa9,0xa3,0x00,0xb6,0xf3,0x93,0xe0}
 
 /* Client characteristic configuration descriptor */
 #define CS_CCC_UUID                     {0x02,0x29}
 
 /* TX value */
-#define CS_TX_VALUE_UUID                {0x24,0xdc,0x0e,0x6e,0x03,0x40,0xca,0x9e,0xe5,0xa9,0xa3,0x00,0xb5,0xf3,0x93,0xe0}
+#define CS_TX_VALUE_UUID                {0x24,0xdc,0x0e,0x6e,0x03,0x40,0xca,0x9e,0xe5,0xa9,0xa3,0x00,0xb7,0xf3,0x93,0xe0}
 
 /* Advertising channel map - 37, 38, 39 */
 #define APP_ADV_CHMAP                   0x07
@@ -136,6 +136,7 @@ enum SPI1R_STATE_t{
 };
 enum SPI1R_STATE_t SPI1R_STATE;
 uint8_t msg_Len;
+
 /* ----------------------------------------------------------------------------
  * Global variables and types
  * --------------------------------------------------------------------------*/
@@ -204,6 +205,7 @@ struct app_env_tag {
 
     uint8_t cccd_value;
     uint8_t uart_rx_value_changed;
+    uint8_t uart_tx_value_changed;
     uint8_t uart_rx_value[60];
     uint8_t uart_tx_value[60];
     uint8_t spi1_rx_value[60];
@@ -212,6 +214,8 @@ struct app_env_tag {
     uint8_t spi1_tx_value_changed;
     uint16_t spi1_rx_size;
     uint16_t spi1_tx_size;
+    uint16_t uart_rx_size;
+    uint16_t uart_tx_size;
     uint16_t bytes;
 };
 
@@ -231,9 +235,7 @@ extern uint8_t bdaddr[BDADDR_LENGTH];
 extern void App_Initialize(void);
 extern void TIMER0_IRQHandler(void);
 extern void SPI0_TX_IRQHandler(void);
-extern void SPI1_RX_IRQHandler(void);
 extern void SPI0_ERROR_IRQHandler (void);
-extern void SPI1_ERROR_IRQHandler(void);
 extern void TIMER1_IRQHandler (void);
 
 /* Bluetooth baseband application support functions */

@@ -15,6 +15,7 @@
  * ------------------------------------------------------------------------- */
 
 #include "../include/app.h"
+#include "../include/spi_interface.h"
 
 /* ----------------------------------------------------------------------------
  * Function      : void App_Initialize(void)
@@ -95,14 +96,8 @@ void App_Initialize(void)
                           TIMER_1S_SETTING);
     Sys_Timers_Start(SELECT_TIMER1);
 
-    /* Configure SPI1 */
-    msg_Len=1;
-    SPI1R_STATE=MSG_NO_REQ;
-    SPI1_SlaveCfg();
-
-    /*SPI1 request slave for master service*/
-    Sys_DIO_Config(6, DIO_WEAK_PULL_UP | DIO_MODE_GPIO_OUT_1);
-    Sys_GPIO_Set_High(6);
+    /* Configure SPI Interface */
+    SPI_IF_Init();
 
     GPIO_4_5_to_Input();
 
@@ -114,6 +109,7 @@ void App_Initialize(void)
     NVIC_EnableIRQ(SPI0_ERROR_IRQn);
     NVIC_EnableIRQ(SPI1_RX_IRQn);
     NVIC_EnableIRQ(SPI1_ERROR_IRQn);
+    NVIC_EnableIRQ(DIO0_IRQn);
 
     /* Enable the needed Bluetooth interrupts, and timer 0 interrupt */
     NVIC_EnableIRQ(BLE_EVENT_IRQn);
